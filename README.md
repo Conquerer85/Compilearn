@@ -1,6 +1,6 @@
 # Compilearn
 
-**[Live demo →](https://YOUR-USERNAME.github.io/compilearn)** ← replace `YOUR-USERNAME` after you create the repo
+**[Live demo →](https://Conquerer85.github.io/compilearn)**
 
 A single page that teaches how compilers work and where automata theory lives inside them. Nothing is pre-recorded — a real compiler runs in the browser, and two labs build the classical constructions live from whatever you type.
 
