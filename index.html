@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A working compiler you can type into, plus the automata underneath it: regular expressions to NFA to DFA to minimal DFA, and LL(1), LR(0), SLR(1), LALR(1) and CLR(1) parse tables built live from your own grammar.">
+<title>Compilearn — compilers, automata and formal languages in one place</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/compilearn.css">
+</head>
+<body>
+<header class="bar">
+  <div class="shell bar-in">
+    <span class="mark"><b>Compilearn</b></span>
+    <nav>
+      <a href="#map">Pipeline</a>
+      <a href="#try">Compile something</a>
+      <a href="#phases">Each phase</a>
+      <a href="#accept">Hierarchy</a>
+      <a href="#regular">Regex &rarr; NFA &rarr; DFA</a>
+      <a href="#grammar">Parser lab</a>
+      <a href="#family">Which parser</a>
+    </nav>
+    <button class="tgl" id="themeBtn" title="Switch between light and dark" aria-label="Switch between light and dark">&#9681;</button>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="shell">
+    <div class="hero-top">
+    <h1>A compiler is automata theory that had to ship.</h1>
+    <p class="sub">Every idea in formal language theory shows up inside a compiler doing a job. A finite automaton becomes the scanner. A pushdown automaton becomes the parser. The Chomsky hierarchy becomes the reason those two are separate programs. <strong>Compilearn</strong> puts both halves on one page: the six phases of a working compiler you can type into, and the machines underneath them &mdash; regular expressions turned into NFAs, NFAs determinised and minimised, grammars turned into LL(1), LR(0), SLR(1), LALR(1) and CLR(1) tables, every construction computed live from what you enter.</p>
+    </div>
+
+    <div class="ladder" aria-label="One statement, carried through every phase">
+      <div class="ladder-hd"><span class="dot"></span> let y = 3 + 4 * 2;</div>
+      <div class="rung" style="--c:var(--p1)"><div class="rung-k"><i></i>characters</div><div class="rung-v">l e t ␣ y ␣ = ␣ 3 ␣ + ␣ 4 ␣ * ␣ 2 ;</div></div>
+      <div class="rung" style="--c:var(--p1)"><div class="rung-k"><i></i>tokens</div><div class="rung-v">⟨let⟩ ⟨id,y⟩ ⟨=⟩ ⟨num,3⟩ ⟨+⟩ ⟨num,4⟩ ⟨*⟩ ⟨num,2⟩ ⟨;⟩</div></div>
+      <div class="rung" style="--c:var(--p2)"><div class="rung-k"><i></i>syntax tree</div><div class="rung-v">let y
+  └ +
+    ├ 3
+    └ *
+      ├ 4
+      └ 2</div></div>
+      <div class="rung" style="--c:var(--p3)"><div class="rung-k"><i></i>meaning</div><div class="rung-v">y : int   declared once, never read
++ : int × int → int    ✓</div></div>
+      <div class="rung" style="--c:var(--p4)"><div class="rung-k"><i></i>instructions</div><div class="rung-v">t1 = 4 * 2
+t2 = 3 + t1
+y  = t2</div></div>
+      <div class="rung" style="--c:var(--p5)"><div class="rung-k"><i></i>improved</div><div class="rung-v">y = 11</div></div>
+      <div class="rung" style="--c:var(--p6)"><div class="rung-k"><i></i>machine code</div><div class="rung-v">MOV  R0, #11
+ST   y, R0</div></div>
+    </div>
+  </div>
+</div>
+
+<section id="map">
+  <div class="shell">
+    <div class="sec-hd"><span class="sec-n">01</span><h2>The shape of the whole machine</h2></div>
+    <p class="lede">Six phases in a line, split into a front end that understands the source language and a back end that speaks the target machine. Two components sit outside the line because every phase talks to them: the symbol table, which remembers what each name means, and the error reporter, which has to describe a failure in terms of the line you wrote rather than the structure it was working on.</p>
+    <div class="map" id="mapBox"></div>
+    <p class="prose" style="margin-top:1.6rem">The split matters commercially. Because the front end ends at a machine-independent intermediate representation, one front end plus <em>n</em> back ends covers <em>n</em> processors, and <em>m</em> front ends plus one back end covers <em>m</em> languages &mdash; rather than <em>m</em>&times;<em>n</em> separate compilers. It is the reason LLVM, GCC and the JVM are organised the way they are.</p>
+  </div>
+</section>
+
+<section id="try">
+  <div class="shell">
+    <div class="sec-hd"><span class="sec-n">02</span><h2>Compile something and watch it come apart</h2></div>
+    <p class="lede">This is a real compiler for a small language, running in the page. Edit the source and every phase below re-runs on what you typed &mdash; including the errors. Break it on purpose: delete a semicolon, use a variable you never declared, put a number where a condition should be.</p>
+
+    <div class="pg">
+      <div class="pg-top">
+        <div class="pane">
+          <div class="pane-hd">
+            <span>source</span>
+            <span class="sp"></span>
+            <button class="chip" data-eg="0">arithmetic</button>
+            <button class="chip" data-eg="1">loop</button>
+            <button class="chip" data-eg="2">errors</button>
+          </div>
+          <textarea id="src" spellcheck="false" aria-label="Source code to compile"></textarea>
+          <div class="stat" id="srcStat"></div>
+        </div>
+        <div class="pane">
+          <div class="tabs" id="tabs" role="tablist"></div>
+          <div class="out" id="out" role="tabpanel"></div>
+          <div class="note" id="noteBox"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="phases">
+  <div class="shell">
+    <div class="sec-hd"><span class="sec-n">03</span><h2>What each phase is made of</h2></div>
+    <p class="lede">The same four questions for each one: what arrives, what data structure holds it while the phase works, what leaves, and which class of mistake this phase is the only one capable of catching.</p>
+    <div class="phases" id="phaseCards"></div>
+  </div>
+</section>
+
+<section id="accept">
+  <div class="shell">
+    <div class="sec-hd"><span class="sec-n">04</span><h2>Which languages a compiler can accept</h2></div>
+    <p class="lede">&ldquo;Accepting a language&rdquo; means deciding whether a string belongs to an infinite set defined by rules. A compiler does not do this once &mdash; it does it three times, at three different levels of power, because each level is the weakest tool that can still do its job. Weakest is a virtue: the weaker the machine, the faster it runs and the better the error messages. The two labs below let you build the machines for the top two rungs yourself.</p>
+
+    <div class="lad">
+      <div class="lad-r hd"><span></span><span>class of language</span><span>written as</span><span>recognised by</span><span>which phase needs it</span></div>
+      <div class="lad-r on" style="--c:var(--p1)">
+        <i>3</i><b>Regular</b>
+        <span class="g">A &rarr; aB &nbsp;|&nbsp; a<br><span class="mut">regular expressions</span></span>
+        <span class="m">Finite automaton &mdash; a fixed number of states, no memory at all.</span>
+        <span class="m"><b>Lexical analysis.</b> Identifiers, numbers, strings, comments. A DFA runs in one pass with one state variable, which is why scanners are the fastest part of a compiler.</span>
+      </div>
+      <div class="lad-r on" style="--c:var(--p2)">
+        <i>2</i><b>Context-free</b>
+        <span class="g">A &rarr; &alpha; &nbsp;<span class="mut">(A a single nonterminal)</span><br><span class="mut">BNF grammars</span></span>
+        <span class="m">Pushdown automaton &mdash; a finite control plus an unbounded stack.</span>
+        <span class="m"><b>Syntax analysis.</b> Nesting: balanced brackets, nested blocks, expressions of any depth. A regular language cannot count matching parentheses; the stack is exactly the missing memory.</span>
+      </div>
+      <div class="lad-r on" style="--c:var(--p3)">
+        <i>1</i><b>Context-sensitive</b>
+        <span class="g">&alpha;A&beta; &rarr; &alpha;&gamma;&beta;</span>
+        <span class="m">Linear-bounded automaton &mdash; a Turing machine on a tape the size of its input.</span>
+        <span class="m"><b>Semantic analysis.</b> &ldquo;Declare before use&rdquo; and &ldquo;argument count must match the definition&rdquo; are provably not context-free. Real compilers give up on writing a grammar for this and use a symbol table instead.</span>
+      </div>
+      <div class="lad-r" style="--c:var(--p0)">
+        <i>0</i><b>Recursively enumerable</b>
+        <span class="g">&alpha; &rarr; &beta;</span>
+        <span class="m">Turing machine.</span>
+        <span class="m">The language a program is <em>allowed</em> to compute. No compiler tries to decide membership here &mdash; that is the halting problem, and it is why no compiler can promise your loop terminates.</span>
+      </div>
+    </div>
+
+    <p class="prose" style="margin-top:1.8rem">Read the table as a staircase a compiler climbs only as far as it must. The scanner refuses to use a stack, so it cannot see nesting &mdash; it hands the parser a flat list. The parser owns a stack but refuses to remember anything about names, so <code>x + 1</code> parses perfectly even when <code>x</code> was never declared. Only the semantic phase keeps a table of facts that persists across the whole tree, and that table is precisely the &ldquo;context&rdquo; the middle rung is named after.</p>
+    <p class="prose">In practice nobody implements a context-sensitive grammar. The rule <em>&ldquo;every identifier must be declared&rdquo;</em> can be written as one, but the grammar is unusable &mdash; so compilers carve off the context-free skeleton, parse that with a pushdown automaton, and check the rest by walking the resulting tree with a symbol table in hand. That division of labour is the single most important design decision in the front end.</p>
+  </div>
+</section>
+
+<section id="regular">
+  <div class="shell">
+    <div class="sec-hd"><span class="sec-n">05</span><h2>Regular languages: patterns, and the machines they compile to</h2></div>
+    <p class="lede">Everything a scanner recognises is a regular language, and there are four equivalent ways to write one down: a regular expression, an NFA, a DFA, and the unique smallest DFA. Each form converts mechanically into the next, and those conversions are what a lexer generator such as <code>lex</code> or <code>flex</code> runs when you hand it a <code>.l</code> file. Start with the automaton the compiler above actually uses, then build your own from a pattern.</p>
+    <div class="auto">
+      <div class="auto-body">
+        <div><div id="dfaSvg"></div></div>
+        <div class="auto-side">
+          <div style="font-family:var(--f-mono);font-size:.72rem;color:var(--ink-3);line-height:1.7;margin-bottom:.9rem;padding-bottom:.8rem;border-bottom:1px solid var(--rule-2)">
+            S0 &mdash; where every token starts<br>
+            double ring &mdash; a complete token can end here<br>
+            dead &mdash; no arrow out, so the lexeme is rejected
+          </div>
+          <label for="dfaIn" style="font-family:var(--f-mono);font-size:.72rem;color:var(--ink-3);display:block;margin-bottom:.35rem">input lexeme</label>
+          <input class="inp" id="dfaIn" value="count2" spellcheck="false">
+          <div class="tape" id="dfaTape"></div>
+          <div class="row">
+            <button class="btn" id="dfaStep">step</button>
+            <button class="btn gh" id="dfaRun">run</button>
+            <button class="btn gh" id="dfaReset">reset</button>
+          </div>
+          <div class="verdict" id="dfaVerdict"></div>
+          <p class="prose" style="font-size:.88rem;margin-top:1rem">Try <code>2count</code>. The machine dies on the second character &mdash; not because the name is meaningless, but because no arrow leaves the number state on a letter. That is the whole of &ldquo;lexical error&rdquo;.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="sub-hd">Build one yourself: a pattern, compiled to three machines</h3>
+    <p class="prose" style="margin-bottom:1.5rem">Write a regular expression and watch Thompson's construction turn it into an NFA with &epsilon;-moves, the subset construction turn that NFA into a DFA, and partition refinement collapse the DFA to the unique minimal one. Operators: <code>|</code> alternation, juxtaposition for concatenation, <code>*</code> zero or more, <code>+</code> one or more, <code>?</code> optional, parentheses for grouping. Every other character is a literal symbol.</p>
+
+    <div class="pg">
+      <div class="pane-hd">
+        <label for="reIn" style="flex:0 0 auto">pattern</label>
+        <input class="inp" id="reIn" spellcheck="false" style="max-width:20rem;font-size:.82rem;padding:.25rem .45rem" value="(a|b)*abb">
+        <span class="sp"></span>
+        <button class="chip" data-re="(a|b)*abb">(a|b)*abb</button>
+        <button class="chip" data-re="[letter]([letter]|[digit])*">identifier</button>
+        <button class="chip" data-re="[digit]+(.[digit]+)?(E(+|-)?[digit]+)?">float</button>
+        <button class="chip" data-re="(0|1)*1(0|1)(0|1)">binary</button>
+      </div>
+      <div class="tabs" id="reTabs" role="tablist"></div>
+      <div class="out out-wide" id="reOut" role="tabpanel"></div>
+      <div class="note" id="reNote"></div>
+    </div>
+
+    <p class="prose" style="margin-top:1.6rem">The three machines accept exactly the same set of strings and differ only in cost. The NFA is small and built in time proportional to the pattern, but simulating it means tracking a <em>set</em> of states at once. The DFA tracks a single state and so runs in one table lookup per character, but can be exponentially larger in the worst case. The minimal DFA is the unique smallest machine for the language &mdash; unique up to renaming states, which is why two patterns are equivalent exactly when their minimal DFAs are identical.</p>
+  </div>
+</section>
+
+<section id="grammar">
+  <div class="shell">
+    <div class="sec-hd"><span class="sec-n">06</span><h2>Context-free languages: one grammar, five parsers</h2></div>
+    <p class="lede">A grammar on its own says nothing about how hard it is to parse. What matters is whether a deterministic machine can decide, from a bounded amount of information, which rule to apply next. Each parsing method answers that differently, and each one accepts a different set of grammars. Write a grammar below and all five are constructed from it at once &mdash; sets, item-set automata, tables and conflicts included.</p>
+
+    <div class="pg">
+      <div class="pg-top">
+        <div class="pane">
+          <div class="pane-hd">
+            <span>grammar</span><span class="sp"></span>
+            <button class="chip" data-g="0">LL(1)</button>
+            <button class="chip" data-g="1">left recursive</button>
+            <button class="chip" data-g="2">ambiguous</button>
+            <button class="chip" data-g="3">not SLR</button>
+            <button class="chip" data-g="4">dangling else</button>
+          </div>
+          <textarea id="gSrc" spellcheck="false" aria-label="Grammar productions"></textarea>
+          <div class="stat" id="gStat"></div>
+        </div>
+        <div class="pane">
+          <div class="pane-hd"><span>which parsers accept this grammar</span></div>
+          <div class="verd" id="gVerd"></div>
+        </div>
+      </div>
+      <div class="tabs" id="gTabs" role="tablist" style="border-top:1px solid var(--rule)"></div>
+      <div class="out out-wide" id="gOut" role="tabpanel"></div>
+      <div class="pane-hd" style="border-top:1px solid var(--rule)">
+        <span>parse a string</span><span class="sp"></span>
+        <input class="inp" id="gIn" spellcheck="false" value="id + id * id" style="max-width:16rem;font-size:.75rem;padding:.2rem .4rem">
+        <button class="chip" id="gGo">run</button>
+      </div>
+      <div class="out" id="gTrace" style="min-height:0"></div>
+      <div class="note" id="gNote"></div>
+    </div>
+
+    <p class="prose" style="margin-top:1.6rem">Notice what the LR tabs are actually showing you: a finite automaton. Its states are sets of items &mdash; productions with a dot marking how much has been seen &mdash; and it recognises the language of <em>viable prefixes</em>, the stack contents that could still lead to a successful parse. That automaton is regular even though the language being parsed is not. The stack supplies the extra power; the automaton only decides what to do with it.</p>
+  </div>
+</section>
+
+<section id="family">
+  <div class="shell">
+    <div class="sec-hd"><span class="sec-n">07</span><h2>Which parser for which grammar</h2></div>
+    <p class="lede">These classes nest. Every LR(0) grammar is SLR(1), every SLR(1) grammar is LALR(1), every LALR(1) grammar is CLR(1). LL(1) sits off to the side: it overlaps the LR classes without being contained in any of them, because top-down and bottom-up fail on different things.</p>
+    <div class="map" id="famBox"></div>
+    <div class="phases" id="famCards" style="margin-top:2rem"></div>
+    <p class="prose" style="margin-top:1.8rem">In practice the middle of that picture wins. LALR(1) has the table size of SLR(1) and close to the grammar coverage of CLR(1), which is why <code>yacc</code> and <code>bison</code> generate LALR(1) parsers and why so many language grammars are written to stay inside it. Recursive descent &mdash; hand-written LL &mdash; survives for the opposite reason: the tables are invisible, the code is ordinary functions, and error messages come out in the shape of the language instead of the shape of a state machine.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    <p><b>Compilearn</b> &mdash; every result on this page is computed in your browser, not looked up. The compiler is a real one: scanner, parser, analyser, IR generator, optimiser and code generator, targeting an invented two-register machine. Thompson’s construction, the subset construction, partition refinement, FIRST and FOLLOW, LR(0) and LR(1) item sets, LALR core merging and all five parse tables are built from whatever you type. If something cannot be handled, it will say which construction gave up and why.</p>
+  </div>
+</footer>
+
+<script src="assets/js/util.js"></script>
+<script src="assets/js/compiler.js"></script>
+<script src="assets/js/automata.js"></script>
+<script src="assets/js/grammar.js"></script>
+<script src="assets/js/ui.js"></script>
+</body>
+</html>
