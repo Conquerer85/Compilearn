@@ -55,66 +55,6 @@ compilearn/
 └── LICENSE                  ← MIT
 ```
 
----
-
-## GitHub setup — exact steps
-
-### 1. Create the repository
-
-Go to **github.com → New repository** and fill in exactly this:
-
-| Field | Value |
-|---|---|
-| **Repository name** | `compilearn` |
-| **Description** | A working compiler and automata theory in one page — regex to NFA to DFA, LL(1), LR(0), SLR(1), LALR(1) and CLR(1) parsers, all built live in the browser |
-| **Visibility** | Public (required for free GitHub Pages) |
-| **Add a README file** | ☐ leave unchecked — you already have one |
-| **Add .gitignore** | ☐ leave unchecked — you already have one |
-| **Choose a license** | ☐ leave unchecked — you already have one |
-
-Click **Create repository**.
-
-### 2. Upload the files
-
-**Option A — drag and drop in the browser (easiest)**
-
-1. On the new empty repo page click **uploading an existing file**.
-2. Drag the entire `compilearn/` folder onto the browser window.
-3. GitHub will pick up every file including the ones inside folders.
-4. Commit message: `Initial upload`
-5. Click **Commit changes**.
-
-**Option B — Git on the command line**
-
-```bash
-cd compilearn
-git init
-git add .
-git commit -m "Initial upload"
-git branch -M main
-git remote add origin https://github.com/YOUR-USERNAME/compilearn.git
-git push -u origin main
-```
-
-### 3. Turn on GitHub Pages
-
-1. In your repo go to **Settings → Pages** (left sidebar).
-2. Under **Build and deployment → Source** select **GitHub Actions**.
-3. Push anything (or just wait — the deploy workflow already ran).
-4. Your site is live at `https://YOUR-USERNAME.github.io/compilearn`.
-
-Update the demo link at the top of this file.
-
-### 4. Add repository topics (optional but good for discoverability)
-
-Go to the repo home page, click the gear icon next to **About**, and add:
-
-```
-compiler  automata  formal-languages  parsing  lex  lr-parser  ll-parser
-nfa  dfa  context-free-grammar  computer-science  education
-```
-
----
 
 ## Running locally
 
